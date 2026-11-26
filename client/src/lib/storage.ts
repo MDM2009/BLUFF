@@ -10,3 +10,6 @@ export const saveNick = (nick: string) => {
 export const isTutorialDone = (): boolean => {
   try { return localStorage.getItem(TUTORIAL_KEY) === '1'; } catch { return false; }
 };
+export const setTutorialDone = () => {
+  try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch { /* приватный режим */ }
+};

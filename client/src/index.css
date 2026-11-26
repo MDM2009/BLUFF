@@ -9,4 +9,6 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 :focus-visible { outline: 2px solid #B8964E; outline-offset: 3px; }
+input[type='range'] { accent-color: #C4202E; }
+html[data-noanim] *, html[data-noanim] *::before { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

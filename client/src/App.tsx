@@ -1,30 +1,40 @@
-import { useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, MotionConfig } from 'framer-motion';
 import BackgroundFX from './components/BackgroundFX';
 import RegisterScreen from './screens/RegisterScreen';
-import { loadNick, saveNick } from './lib/storage';
+import TutorialScreen from './screens/TutorialScreen';
+import MenuScreen from './screens/MenuScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import { isTutorialDone, loadNick, saveNick, setTutorialDone } from './lib/storage';
+import { useSettings } from './lib/settings';
 
-type Screen = 'register' | 'stub';
+type Screen = 'register' | 'tutorial' | 'review' | 'menu' | 'settings';
 
 export default function App() {
   const [nick, setNick] = useState<string | null>(loadNick());
-  const [screen, setScreen] = useState<Screen>(nick ? 'stub' : 'register');
+  const [screen, setScreen] = useState<Screen>(!nick ? 'register' : isTutorialDone() ? 'menu' : 'tutorial');
+  const { animations } = useSettings();
 
-  const onRegister = (n: string) => { saveNick(n); setNick(n); setScreen('stub'); };
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-noanim', !animations);
+  }, [animations]);
+
+  const onRegister = (n: string) => {
+    saveNick(n); setNick(n);
+    setScreen(isTutorialDone() ? 'menu' : 'tutorial');
+  };
+  const changeNick = (n: string) => { saveNick(n); setNick(n); };
 
   return (
-    <>
+    <MotionConfig reducedMotion={animations ? 'user' : 'always'}>
       <BackgroundFX />
       <AnimatePresence mode="wait">
         {screen === 'register' && <RegisterScreen key="reg" initial={nick ?? ''} onDone={onRegister} />}
-        {screen === 'stub' && (
-          <main key="stub" className="relative flex min-h-full flex-col items-center justify-center gap-4 px-6 text-center">
-            <p className="font-display text-3xl">Привет, {nick}</p>
-            <p className="max-w-sm text-bone/60">Регистрация работает, ник сохранён. Обучение и главное меню появятся на этапе 2 — сейчас их ещё нет.</p>
-            <button onClick={() => setScreen('register')} className="rounded-lg border border-ash px-4 py-2 text-sm text-bone/70 hover:border-brass">Изменить никнейм</button>
-          </main>
-        )}
+        {screen === 'tutorial' && <TutorialScreen key="tut" mode="first" onDone={() => { setTutorialDone(); setScreen('menu'); }} />}
+        {screen === 'review' && <TutorialScreen key="rev" mode="review" onDone={() => setScreen('menu')} />}
+        {screen === 'menu' && nick && <MenuScreen key="menu" nick={nick} onTutorial={() => setScreen('review')} onSettings={() => setScreen('settings')} />}
+        {screen === 'settings' && nick && <SettingsScreen key="set" nick={nick} onNick={changeNick} onRules={() => setScreen('review')} onBack={() => setScreen('menu')} />}
       </AnimatePresence>
-    </>
+    </MotionConfig>
   );
 }
